@@ -7,6 +7,7 @@ from ttkbootstrap.scrolled import ScrolledText
 from pathlib import Path
 from itertools import cycle
 from PIL import Image, ImageTk
+import time 
 
 # Initializing main window
 main = ttk.Window(themename="superhero")
@@ -68,30 +69,36 @@ def set_list():
     grade_combo.configure(state=ACTIVE, 
                             values=[selection + str(i) for i in range(1, count + 1)])
 
-def calculate():
-    """Calculate grades based on user entries."""
-    item = grade_combo.get()
-    if item not in result:
-        result.append((item, int(enter_percent.get()), int(enter_grade.get())))
-    
-    enter_percent.delete(0, END)
-    enter_grade.delete(0,END)
-
 def set_text_box():
     """Initialize the scrollable text box for output display."""
     note_space = ttk.LabelFrame(text="Notes", bootstyle="primary")
     note_space.grid(row=1, column=4, columnspan=8, rowspan=4, padx=10, pady=10)
 
+    global text_box
     text_box = ScrolledText(note_space, height=10, width=45, wrap=WORD, autohide=True, bootstyle="primary")
     text_box.grid(row=1, column=0, columnspan=8, rowspan=4, padx=5, pady=5)
 
+    text_box.insert(END, 'User Input:\n')
+
+def calculate():
+    """Calculate grades based on user entries."""
+    item = grade_combo.get()
+    if item not in result:
+        result.append((item, int(enter_percent.get()), int(enter_grade.get())))
+    text_box.insert(END, item + ' weighs ' + enter_percent.get() + '%, recieves ' + enter_grade.get() + '%.\n')
+    enter_percent.delete(0, END)
+    enter_grade.delete(0,END)
+
 def update_grade_display(final_grade):
     """Update the display with the final grade and other requirements."""
+    global letterGrade
     for item in sfu_grading:
         if final_grade >= item[0]:
             letter_grade.configure(text="Your letter grade: " + item[1])
+            letterGrade = item[1]
             break
-
+    global graduation_text
+    global prereq_text 
     graduation_text = "pass" if final_grade >= 50 else "fail"
     prereq_text = "pass" if final_grade >= 55 else "fail"
 
@@ -106,9 +113,27 @@ def final():
     update_grade_display(final_grade)
 
 def increment():
-    """Show animation of progress bar once press reset."""
-    progress.start(5)
+    """Animate the progress bar by incrementally updating its value and refreshing the GUI."""
+    progress['value'] = 0
+
+    for x in range(40):
+        progress['value'] += 2.5
+        main.update_idletasks()  # Update the GUI to reflect changes
+        time.sleep(0.1)  # Pause for a short period to see the progress bar update
+
+    global result
+    result = []
+
     
+def back():
+    del result[-1]
+
+def save():
+    text_box.insert(END, 'final percentage: ' + str(final_grade)
+                    + '% \n final letter grade:' + letterGrade
+                    + '\nprerequisite requirement: ' + prereq_text
+                    + '\ngraduation requirement: ' + graduation_text + '\n')
+    text_box.insert(END, '-' * 50 + '\n')
 
 # UI Layout
 # Grading Module Frame
@@ -163,10 +188,10 @@ utility_space.grid(row=5, column=4, columnspan=3, rowspan=4, padx=10, pady=10)
 reset = ttk.Button(utility_space, text="reset", bootstyle="info, outline", command = increment)
 reset.grid(row=0, column=0, padx=5, pady=5)
 
-save = ttk.Button(utility_space, text="save", bootstyle="info, outline")
+save = ttk.Button(utility_space, text="save", bootstyle="info, outline", command = save)
 save.grid(row=0, column=1, padx=5, pady=5)
 
-delete = ttk.Button(utility_space, text="delete", bootstyle="info, outline")
+delete = ttk.Button(utility_space, text="delete", bootstyle="info, outline", command = back)
 delete.grid(row=0, column=2, padx=5, pady=5)
 
 progress = ttk.Progressbar(utility_space, bootstyle = "success striped",
