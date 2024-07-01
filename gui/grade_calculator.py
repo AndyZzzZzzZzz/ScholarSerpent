@@ -1,14 +1,15 @@
-from tkinter import Frame, Label, Entry, Button
+from tkinter import Frame, Label, Entry, Button, messagebox
 from PIL import Image, ImageTk
 Image.CUBIC = Image.BICUBIC
 from ttkbootstrap.constants import *
 import ttkbootstrap as ttk
-from ttkbootstrap.scrolled import ScrolledText
+from database import Database
 
 class GradeCalculatorFrame(Frame):
     def __init__(self, master=None, controller=None, **kwargs):
         super().__init__(master, **kwargs)
         self.controller = controller
+        self.database = Database()  # Initialize the database attribute
         self.init_ui()
 
     def init_ui(self):
@@ -57,6 +58,7 @@ class GradeCalculatorFrame(Frame):
         self.Course.place(x=10, y=10, width=150, height=25)
         self.enter_course = ttk.Entry(self.input_space, bootstyle="primary")
         self.enter_course.place(x=220, y=10, width=180, height=25)
+        self.enter_course.bind("<Return>", self.on_enter_course_id)
 
         # Information for entries - Number, Percentage, Grade (each on the same row as their entry boxes)
         self.Percentage = ttk.Label(self.input_space, text=self.selection + " Percentage: ", bootstyle="info")
@@ -105,8 +107,9 @@ class GradeCalculatorFrame(Frame):
         self.reset = ttk.Button(self.utility_space, text="reset", bootstyle="info, outline")
         self.reset.place(x=240, y=10, width=100, height=30)
 
-        self.save_btn = ttk.Button(self.utility_space, text="save", bootstyle="info, outline")
+        self.save_btn = ttk.Button(self.utility_space, text="save", bootstyle="info, outline", command=self.save_data)
         self.save_btn.place(x=360, y=10, width=100, height=30)
+
 
         self.delete = ttk.Button(self.utility_space, text="delete", bootstyle="info, outline")
         self.delete.place(x=480, y=10, width=100, height=30)
@@ -215,4 +218,28 @@ class GradeCalculatorFrame(Frame):
 
         self.graduation.configure(text=f"Graduation Requirement: {self.graduation_text}")
         self.prereq.configure(text=f"Prerequisite Requirement: {self.prereq_text}")
+    
+    def save_data(self):
+        courseID = self.enter_course.get()
+        userID = self.controller.current_user
+        component = self.selection
+        percentage = self.results[component][0]
+
+        # Calculate the average grade for the component
+        grades = self.results[component][1]
+        if grades:
+            average_grade = sum(grade / total for total, grade in grades) / len(grades)
+        else:
+            average_grade = 0
+
+        # Save the data to the database
+        self.database.insert_calculation(courseID, userID, component, percentage, average_grade)
+
+        messagebox.showinfo("Save Successful", "Your data has been saved successfully!")
+
+    def on_enter_course_id(self, event):
+        self.courseID = self.enter_course.get()
+        self.enter_course.configure(state="disabled")
+    
+
 
