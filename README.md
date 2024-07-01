@@ -1,64 +1,70 @@
-# SFU Grade Calculator
+# ScholarSerpent
 
-SFU Grade Calculator is a desktop application built with Python and Tkinter, using the ttkbootstrap library for a modern and clean user interface. This application allows SFU students to calculate their final grades based on various grading components and provides a visual representation of their grades.
+## Problem Statement
+Managing grades and tracking academic performance can be a complex and time-consuming task for students. Existing solutions often lack comprehensive features, personalized insights, and intuitive interfaces to help students effectively manage their grades and study plans.
 
-## Features
+## Current Progress
+ScholarSerpent is a comprehensive grade management application designed to simplify the process of tracking and analyzing academic performance. The current version includes the following features:
 
-- **Dynamic Component Selection:** Choose from different grading components like Assignments, Midterms, Final Exam, etc.
-- **Grade Meter:** Visual representation of the final grade.
-- **Notes Section:** Scrollable text area to keep track of the user's input and results.
-- **Validation:** Input validation to ensure only numbers are entered.
-- **Progress Bar:** Visual progress bar to indicate tasks like resetting the application.
-- **Save Functionality:** Save the final grade calculation results in the notes section.
-- **Delete Functionality:** Delete the last entered grade component.
+- **Grade Management:**
+  - Developed a grade calculator with dynamic user interface updates using Python and Tkinter.
+  - Implemented data input validation to ensure accurate grade entries.
+  
+- **Persistent Storage:**
+  - Integrated SQLite database to store and retrieve user grade data.
+  - Designed database operations to ensure data integrity and facilitate historical analysis of grades.
+  
+- **User Authentication:**
+  - Planned and initiated user login functionality for personalized data storage.
+  - Enabled tracking of grade history and performance analysis to provide insights into academic progress.
 
-## Installation
+## Technologies Used
+- Python
+- Tkinter
+- SQLite
+- ttkbootstrap
+- RESTful API (GPT API for future integration)
 
-1. **Clone the repository:**
-    ```sh
-    git clone https://github.com/yourusername/sfu-grade-calculator.git
+## Future Implementations
+- **Advanced Analytics:**
+  - Develop features to analyze past grade data and provide personalized study suggestions using GPT API.
+  - Implement data visualization tools to give students insights into their academic performance trends.
+
+- **Enhanced User Experience:**
+  - Improve the user interface with more intuitive navigation and design.
+  - Add features for tracking assignments, exams, and other academic activities.
+  
+- **Mobile Compatibility:**
+  - Develop a mobile-friendly version of the application to allow students to manage their grades on the go.
+
+- **Cloud Integration:**
+  - Integrate cloud storage solutions to back up user data and ensure accessibility from multiple devices.
+
+## Getting Started
+To get started with ScholarSerpent, follow these steps:
+
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/yourusername/scholarserpent.git
     ```
-2. **Navigate to the project directory:**
-    ```sh
-    cd sfu-grade-calculator
+
+2. Navigate to the project directory:
+    ```bash
+    cd scholarserpent
     ```
-3. **Install the required dependencies:**
-    ```sh
+
+3. Install the required dependencies:
+    ```bash
     pip install -r requirements.txt
     ```
 
-## Usage
-
-1. **Run the application:**
-    ```sh
-    python sfu_grade_calculator.py
+4. Run the application:
+    ```bash
+    python main.py
     ```
-2. **Interacting with the application:**
-   - Select a grading component from the dynamically generated buttons.
-   - Enter the number of items for the selected component and confirm.
-   - Enter the weight percentage and received grade for each item.
-   - Confirm each entry to add it to the calculation.
-   - Click on "Calculate" to compute the final grade.
-   - The meter will display the total course grade, and the letter grade will be shown based on the SFU grading scale.
-
 
 ## Contributing
+We welcome contributions to improve ScholarSerpent! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request.
 
-Contributions are welcome! Please follow these steps to contribute:
-
-1. Fork the repository.
-2. Create a new branch: `git checkout -b feature-branch-name`
-3. Make your changes and commit them: `git commit -m 'Add new feature'`
-4. Push to the branch: `git push origin feature-branch-name`
-5. Submit a pull request.
-
-
-
-## Acknowledgements
-
-- [ttkbootstrap](https://ttkbootstrap.readthedocs.io/en/latest/) for the modern UI components.
-- SFU grading scale for providing the basis of grade calculation.
-
-## Contact
-
-For any inquiries or issues, please contact [kza63@sfu.ca](mailto:kza63@sfu.ca).
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
