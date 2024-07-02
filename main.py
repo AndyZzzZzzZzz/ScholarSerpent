@@ -5,7 +5,7 @@ import ttkbootstrap as ttk
 def main():
     # Initialize the main window with a specific theme.
     root = ttk.Window(themename="superhero")
-
+    root.iconbitmap()
     # Create an instance of the MainWindow class, passing the root window as an argument
     app = MainWindow(root)
 
