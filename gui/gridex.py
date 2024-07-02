@@ -1,9 +1,7 @@
 from tkinter import Frame, Label, Entry, Button
 from PIL import Image, ImageTk
 Image.CUBIC = Image.BICUBIC
-from ttkbootstrap.constants import *
 import ttkbootstrap as ttk
-from ttkbootstrap.scrolled import ScrolledText
 
 class GradeCalculatorFrame(Frame):
     def __init__(self, master=None, **kwargs):

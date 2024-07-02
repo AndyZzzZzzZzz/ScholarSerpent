@@ -1,8 +1,8 @@
 from tkinter import Frame, Label, Entry, Button, messagebox
 from PIL import Image, ImageTk
 Image.CUBIC = Image.BICUBIC
-from ttkbootstrap.constants import *
 import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 from database import Database
 
 class GradeCalculatorFrame(Frame):
