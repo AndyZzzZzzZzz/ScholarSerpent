@@ -62,6 +62,7 @@ class Database:
                 letterGrade=excluded.letterGrade, prerequisiteStatus=excluded.prerequisiteStatus, graduationStatus=excluded.graduationStatus
             """, (userID, courseID, letterGrade, prerequisiteStatus, graduationStatus))
 
+
     def get_user(self, userID):
         with self.conn:
             return self.conn.execute("SELECT * FROM users WHERE userID = ?", (userID,)).fetchone()

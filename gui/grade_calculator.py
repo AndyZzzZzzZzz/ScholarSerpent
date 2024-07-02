@@ -117,8 +117,9 @@ class GradeCalculatorFrame(Frame):
         self.menu = ttk.Button(self.utility_space, text="menu", bootstyle="info, outline", command=lambda: self.controller.show_frame("CustomButtonFrame"))
         self.menu.place(x=120, y=10, width=100, height=30)
 
-        self.menu = ttk.Button(self.utility_space, text="record", bootstyle="info, outline")
-        self.menu.place(x=600, y=10, width=100, height=30)
+        self.record_btn = ttk.Button(self.utility_space, text="record", bootstyle="info, outline", command=self.record_grade)
+        self.record_btn.place(x=600, y=10, width=100, height=30)
+
 
         # Initialize the grade meter display
         self.meter = None
@@ -240,6 +241,19 @@ class GradeCalculatorFrame(Frame):
     def on_enter_course_id(self, event):
         self.courseID = self.enter_course.get()
         self.enter_course.configure(state="disabled")
+
+    def record_grade(self):
+        userID = self.controller.current_user
+        courseID = self.enter_course.get()
+        letterGrade = self.letter_grade.cget("text").split(": ")[1]
+        prerequisiteStatus = self.prereq.cget("text").split(": ")[1]
+        graduationStatus = self.graduation.cget("text").split(": ")[1]
+
+        # Save the data to the database
+        self.database.insert_grade(userID, courseID, letterGrade, prerequisiteStatus, graduationStatus)
+
+        messagebox.showinfo("Record Successful", "Your grade information has been recorded successfully!")
+
     
 
 
