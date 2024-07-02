@@ -19,7 +19,7 @@ class LoginFrame(Frame):
         container.place(relx=0.5, rely=0.5, anchor='center', width=400, height=500)
 
         # User Icon
-        img = Image.open("incognito.png")  # Replace with the path to your icon image
+        img = Image.open("image/incognito.png")  # Replace with the path to your icon image
         resize = img.resize((64, 64), Image.LANCZOS)
         new_img = ImageTk.PhotoImage(resize)
         self.user_icon = Label(container, image=new_img, bg="#1e1e2d")
