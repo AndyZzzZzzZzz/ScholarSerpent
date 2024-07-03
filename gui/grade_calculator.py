@@ -81,7 +81,7 @@ class GradeCalculatorFrame(Frame):
         
         self.Curve = ttk.Label(self.input_space, text="Curve Preference: ", bootstyle="info")
         self.Curve.place(x=10, y=170, width=150, height=25)
-        self.enter_curve= ttk.Scale(self.input_space, bootstyle="success", from_ = 0, to = 100, orient= HORIZONTAL)
+        self.enter_curve= ttk.Scale(self.input_space, bootstyle="success", from_ = -10, to = 20, orient= HORIZONTAL)
         self.enter_curve.place(x=220, y=170, width=180, height=25)
 
         # Results Frame
@@ -104,14 +104,14 @@ class GradeCalculatorFrame(Frame):
         self.utility_space = ttk.LabelFrame(self, text="Utility", bootstyle="primary")
         self.utility_space.place(x=10, y=340, width=865, height=90)
 
-        self.reset = ttk.Button(self.utility_space, text="reset", bootstyle="info, outline")
+        self.reset = ttk.Button(self.utility_space, text="reset", bootstyle="info, outline", command=self.reset_fields)
         self.reset.place(x=240, y=10, width=100, height=30)
 
         self.save_btn = ttk.Button(self.utility_space, text="save", bootstyle="info, outline", command=self.save_data)
         self.save_btn.place(x=360, y=10, width=100, height=30)
 
 
-        self.delete = ttk.Button(self.utility_space, text="delete", bootstyle="info, outline")
+        self.delete = ttk.Button(self.utility_space, text="delete", bootstyle="info, outline", command=self.delete_last_entry)
         self.delete.place(x=480, y=10, width=100, height=30)
 
         self.menu = ttk.Button(self.utility_space, text="menu", bootstyle="info, outline", command=lambda: self.controller.show_frame("CustomButtonFrame"))
@@ -178,24 +178,49 @@ class GradeCalculatorFrame(Frame):
             self.meter.configure(amountused=grade)
 
     def on_enter_percentage(self, event):
-            percentage = self.enter_percent.get()
-            if percentage.isdigit():
-                percentage = int(percentage)
-                self.results[self.selection][0] = percentage
-                self.enter_percent.configure(state="disabled")
+        percentage = self.enter_percent.get()
+        if not percentage.isdigit():
+            messagebox.showwarning("Invalid Input", "Percentage must be an integer.")
+            return
+        
+        percentage = int(percentage)
+        
+        total_percentage = sum(self.results[component][0] for component in self.results)
+        total_percentage += percentage - self.results[self.selection][0]  # Adjust the current component's percentage
+
+        if total_percentage > 100:
+            messagebox.showwarning("Invalid Input", "Total percentage for all components cannot exceed 100.")
+            return
+
+        self.results[self.selection][0] = percentage
+        self.enter_percent.configure(state="disabled")
+
+
 
     def on_enter_number_and_grade(self, event):
         total = self.enter_number.get()
         grade = self.enter_grade.get()
-        if total.isdigit():
+
+        if not total or not grade:
+            messagebox.showwarning("Invalid Input", "Both total grade and grade received must have values.")
+            return
+
+        if total.isdigit() and (lambda x: x.replace('.', '', 1).isdigit() and x.count('.') < 2)(grade):
             total = int(total)
-            if grade.isdigit():
-                grade = int(grade)
-            else:
-                grade = 0  # Default value if grade is not entered
+            grade = float(grade)
+
+            if grade > total:
+                messagebox.showwarning("Invalid Input", "Grade received cannot exceed total grade.")
+                return
+
             self.results[self.selection][1].append((total, grade))
             self.enter_number.delete(0, 'end')
             self.enter_grade.delete(0, 'end')
+        else:
+            messagebox.showwarning("Invalid Input", "Total grade must be an integer and grade received must be a numeric value.")
+
+
+
 
     def calculate_final_grade(self):
         total_grade = 0
@@ -204,7 +229,12 @@ class GradeCalculatorFrame(Frame):
                 avg_score = sum(score / total for total, score in scores) / len(scores)
                 component_grade = avg_score * percentage
                 total_grade += component_grade
-        self.final_grade = total_grade
+
+        # Apply the curve adjustment
+        curve_value = self.enter_curve.get()
+        curve_multiplier = 1 + (curve_value / 100)  # Calculate the curve multiplier
+        self.final_grade = round(total_grade * curve_multiplier, 2)  # Round to two decimal places
+
         self.init_meter(self.final_grade)
         self.update_grade_display(self.final_grade)
 
@@ -254,6 +284,57 @@ class GradeCalculatorFrame(Frame):
 
         messagebox.showinfo("Record Successful", "Your grade information has been recorded successfully!")
 
-    
+    def reset_fields(self):
+        # Clear the current course name and enable the course entry box
+        self.enter_course.configure(state="normal")
+        self.enter_course.delete(0, 'end')
+
+        # Reset the results dictionary to default state
+        self.results = {
+            "HW": [0, []],
+            "Midterm": [0, []],
+            "Exam": [0, []],
+            "Project": [0, []],
+            "Particip.": [0, []],
+            "Quiz": [0, []],
+            "Talk": [0, []],
+            "Other": [0, []],
+            "Bonus": [0, []]
+        }
+
+        # Clear the entry boxes
+        self.enter_percent.configure(state="normal")
+        self.enter_percent.delete(0, 'end')
+        self.enter_number.delete(0, 'end')
+        self.enter_grade.delete(0, 'end')
+
+        # Clear the grade meter
+        self.init_meter(0)
+
+        # Clear the graduation and prerequisite requirements labels
+        self.graduation.configure(text="Graduation Requirement: ")
+        self.prereq.configure(text="Prerequisite Requirement: ")
+        self.letter_grade.configure(text="Your letter grade: ")
+
+        # Set the curve scale to 0
+        self.enter_curve.set(0)
+
+        # Clear any stored final grade
+        self.final_grade = 0
+
+    def delete_last_entry(self):
+        # Get the current grading component
+        component = self.selection
+
+        # Check if there are any scores to delete
+        if self.results[component][1]:
+            # Remove the last score entry
+            self.results[component][1].pop()
+
+            # Provide feedback to the user
+            messagebox.showinfo("Delete Successful", "The last entry has been deleted successfully.")
+        else:
+            messagebox.showinfo("No Entries", "There are no entries to delete.")
+
 
 
