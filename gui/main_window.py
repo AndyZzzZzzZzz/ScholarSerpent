@@ -8,7 +8,7 @@ class MainWindow:
         # Store the root window instance
         self.root = root
         # Set the title of the main window
-        self.root.title("Superhero Themed App")
+        self.root.title("ScholarSerpent")
         # Set main window geometry 
         self.root.geometry('885x500')
 
