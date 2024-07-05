@@ -1,12 +1,5 @@
 # ScholarSerpent
 
-## Problem Statement
-Managing grades and tracking academic performance can be a complex and time-consuming task for students. Existing solutions often lack comprehensive features, personalized insights, and intuitive interfaces to help students effectively manage their grades and study plans.
-
-## Current Progress
-ScholarSerpent is a comprehensive grade management application designed to simplify the process of tracking and analyzing academic performance. The current version includes the following features:
-
-### User Login
 ![User Login](image/login.png)
 
 ### Menu
@@ -14,6 +7,12 @@ ScholarSerpent is a comprehensive grade management application designed to simpl
 
 ### Performance Calculator
 ![Performance Calculator](image/calculator.png)
+
+## Problem Statement
+Managing grades and tracking academic performance can be a complex and time-consuming task for students. Existing solutions often lack comprehensive features, personalized insights, and intuitive interfaces to help students effectively manage their grades and study plans.
+
+## Current Progress
+ScholarSerpent is a comprehensive grade management application designed to simplify the process of tracking and analyzing academic performance. The current version includes the following features:
 
 - **Grade Management:**
   - Developed a grade calculator with dynamic user interface updates using Python and Tkinter.
