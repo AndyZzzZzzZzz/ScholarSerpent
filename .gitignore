@@ -1,2 +1,11 @@
+# macOS system file, should not be tracked
 .DS_Store
+
+# Python bytecode cache directory, not needed in version control
 __pycache__/
+
+# Local iconset directory, should not be tracked
+serpent.iconset
+
+# GUI-specific Python bytecode cache, not needed in version control
+gui/__pycache__/
