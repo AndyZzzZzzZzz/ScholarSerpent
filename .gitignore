@@ -9,3 +9,6 @@ serpent.iconset
 
 # GUI-specific Python bytecode cache, not needed in version control
 gui/__pycache__/
+
+# Ignore the database file created by the application
+grade_calculator.db
