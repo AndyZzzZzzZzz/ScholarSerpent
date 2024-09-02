@@ -1,4 +1,5 @@
 import sqlite3
+import hashlib
 
 class Database:
     def __init__(self, db_name="grade_calculator.db"):
@@ -8,6 +9,7 @@ class Database:
         :param db_name: The name of the SQLite database file to connect to. Defaults to "grade_calculator.db".
         """
         self.conn = sqlite3.connect(db_name)  # Establish a connection to the SQLite database
+        self.conn.execute("PRAGMA foreign_keys = ON;")  # Enable foreign key constraints
         self.create_tables()  # Create the necessary tables if they don't already exist
 
     def create_tables(self):
@@ -17,7 +19,7 @@ class Database:
         Tables created:
         - users: Stores user IDs and passwords.
         - calculations: Stores course component grades and their corresponding percentages.
-        - grades: Stores final letter grades, prerequisite status, and graduation status for courses.
+        - grades: Stores final letter grades, prerequisite status, graduation status, and the date saved for courses.
         """
         with self.conn:
             # Create the users table with userID as the primary key and userPassword as a required field
@@ -41,7 +43,7 @@ class Database:
                 )
             """)
             
-            # Create the grades table to store final grades and course completion status
+            # Create the grades table to store final grades, course completion status, and the date the information was saved
             self.conn.execute("""
                 CREATE TABLE IF NOT EXISTS grades (
                     userID TEXT,
@@ -49,23 +51,33 @@ class Database:
                     letterGrade TEXT NOT NULL,
                     prerequisiteStatus TEXT NOT NULL,
                     graduationStatus TEXT NOT NULL,
+                    dateSaved TEXT NOT NULL DEFAULT (datetime('now')),
                     PRIMARY KEY (userID, courseID),
                     FOREIGN KEY (userID) REFERENCES users(userID)
                 )
             """)
 
-    def insert_user(self, userID, userPassword):
+            # Create indexes to optimize queries on grades and calculations tables
+            self.conn.execute("CREATE INDEX IF NOT EXISTS idx_userid ON grades(userID)")
+            self.conn.execute("CREATE INDEX IF NOT EXISTS idx_courseid ON grades(courseID)")
+            self.conn.execute("CREATE INDEX IF NOT EXISTS idx_calc_userid ON calculations(userID)")
+            self.conn.execute("CREATE INDEX IF NOT EXISTS idx_calc_courseid ON calculations(courseID)")
+
+    def insert_user(self, userID, hashed_password):
         """
         Insert a new user into the users table.
         
         :param userID: The unique identifier for the user.
-        :param userPassword: The password for the user.
+        :param hashed_password: The hashed password for the user.
         """
         with self.conn:
             self.conn.execute("""
                 INSERT INTO users (userID, userPassword)
                 VALUES (?, ?)
-            """, (userID, userPassword))
+            """, (userID, hashed_password))
+            
+
+
 
     def insert_calculation(self, courseID, userID, component, percentage, grade):
         """
@@ -90,7 +102,7 @@ class Database:
         """
         Insert a new final grade into the grades table.
         If a record with the same userID and courseID already exists, it updates the letter grade,
-        prerequisite status, and graduation status.
+        prerequisite status, graduation status, and the dateSaved.
         
         :param userID: The identifier for the user.
         :param courseID: The identifier for the course.
@@ -103,7 +115,7 @@ class Database:
                 INSERT INTO grades (userID, courseID, letterGrade, prerequisiteStatus, graduationStatus)
                 VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT(userID, courseID) DO UPDATE SET
-                letterGrade=excluded.letterGrade, prerequisiteStatus=excluded.prerequisiteStatus, graduationStatus=excluded.graduationStatus
+                letterGrade=excluded.letterGrade, prerequisiteStatus=excluded.prerequisiteStatus, graduationStatus=excluded.graduationStatus, dateSaved=datetime('now')
             """, (userID, courseID, letterGrade, prerequisiteStatus, graduationStatus))
 
     def get_user(self, userID):

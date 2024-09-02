@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 from database import Database
 import os
 import sys
+import hashlib
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -22,7 +23,6 @@ class LoginFrame(Frame):
         self.init_ui()
 
     def init_ui(self):
-
         # Main container frame using grid for responsive layout
         container = ttk.Frame(self, padding=20)
         container.grid(row=0, column=0, sticky="nsew")
@@ -93,9 +93,33 @@ class LoginFrame(Frame):
         register_button = ttk.Button(bottom_frame, text="REGISTER", style="CustomOutline.TButton", command=self.register_user)
         register_button.pack(side="right", padx=10)
 
+
+    def register_user(self):
+        userID = self.email_entry.get().strip()
+        userPassword = self.password_entry.get().strip()
+
+        if userID == "Enter your User ID" or not userID:
+            messagebox.showerror("Input Error", "Please enter a valid User ID")
+            return
+
+        if userPassword == "Enter your Password" or not userPassword:
+            messagebox.showerror("Input Error", "Please enter a valid Password")
+            return
+
+        user = self.database.get_user(userID)
+        if user:
+            messagebox.showerror("Registration Failed", "User ID already exists.")
+        else:
+            # Hash the password before sending it to the database
+            hashed_password = hashlib.sha256(userPassword.encode()).hexdigest()
+            self.database.insert_user(userID, hashed_password)
+            messagebox.showinfo("Registration Success", "You have successfully registered!")
+
+
     def login_user(self):
-        userID = self.email_entry.get()
-        userPassword = self.password_entry.get()
+        userID = self.email_entry.get().strip()
+        userPassword = self.password_entry.get().strip()
+
 
         if userID == "Enter your User ID" or not userID:
             messagebox.showerror("Input Error", "Please enter your User ID")
@@ -107,7 +131,9 @@ class LoginFrame(Frame):
 
         user = self.database.get_user(userID)
         if user:
-            if user[1] == userPassword:
+            hashed_password = hashlib.sha256(userPassword.encode()).hexdigest()
+            
+            if user[1] == hashed_password:
                 messagebox.showinfo("Login Success", "Welcome back!")
                 self.controller.current_user = userID
                 self.controller.show_frame("CustomButtonFrame")
@@ -116,8 +142,8 @@ class LoginFrame(Frame):
         else:
             messagebox.showerror("Login Failed", "User ID not found.")
 
-    def register_user(self):
-        messagebox.showinfo("Register", "Registration functionality to be implemented.")
+
+
 
     def forgot_password(self):
         messagebox.showinfo("Forgot Password", "Password recovery functionality to be implemented.")
