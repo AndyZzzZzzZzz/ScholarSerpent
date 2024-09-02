@@ -1,5 +1,5 @@
-from tkinter import Frame, Label, Entry, Button, messagebox
-from PIL import Image, ImageTk
+from tkinter import Frame, Label, Entry, messagebox
+from PIL import Image
 Image.CUBIC = Image.BICUBIC
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
@@ -9,332 +9,188 @@ class GradeCalculatorFrame(Frame):
     def __init__(self, master=None, controller=None, **kwargs):
         super().__init__(master, **kwargs)
         self.controller = controller
-        self.database = Database()  # Initialize the database attribute
+        self.database = Database()
         self.init_ui()
 
     def init_ui(self):
-        self.configure()
+        self.configure(bg="#1e1e2d")
 
-        # Define global variables for use across the application
-        self.grading_components = [
-            "HW", "Midterm", "Exam", "Project",
-            "Particip.", "Quiz", "Talk", "Other", "Bonus"
-        ]
-        self.selection = self.grading_components[0]  # Default initial selection
-        self.result = []  # To store grading data
-        self.final_grade = 0 # Initialize the final grade to zero
-        self.sfu_grading = [  # SFU grading scale
-            (95, "A+"), (90, "A"), (85, "A-"), (80, "B+"), (75, "B"), (70, "B-"),
-            (65, "C+"), (60, "C"), (55, "C-"), (50, "D"), (45, "F"),
-        ]
+        self.grading_components = ["Assignment", "Midterm", "Final Exam", "Term Project", "Participation", "Quiz", "Presentation", "Other Marks", "Bonus Marks"]
+        self.selection = "Assignment"
 
-        # Initialize an empty dictionary to store computation results
-        self.results = {
-            "HW": [0, []],
-            "Midterm": [0, []],
-            "Exam": [0, []],
-            "Project": [0, []],
-            "Particip.": [0, []],
-            "Quiz": [0, []],
-            "Talk": [0, []],
-            "Other": [0, []],
-            "Bonus": [0, []]
-        }
+        # Main container with pack layout
+        container = ttk.Frame(self, padding=20)
+        container.pack(fill="both", expand=True)
 
-        # Grading Module
-        self.grade_module = ttk.LabelFrame(self, text="Grading Module", bootstyle="info")
-        self.grade_module.place(x=10, y=10, width=865, height=60)
+        # Grading Module (a)
+        grade_module = ttk.LabelFrame(container, text="Grade Calculator", bootstyle="info", padding=10)
+        grade_module.pack(side="top", fill="x", pady=10)
 
-        # Initialize buttons dynamically for each grading component
-        self.init_buttons()
+        self.init_buttons(grade_module)
 
-        # Data Input Frame
-        self.input_space = ttk.LabelFrame(self, text="Data Input", bootstyle="primary")
-        self.input_space.place(x=10, y=80, width=420, height=250)
+        # Middle Frame for input, result, and GPA (b, c, d)
+        middle_frame = Frame(container, bg="#1e1e2d")
+        middle_frame.pack(side="top", fill="both", expand=True)
 
-        # CourseCode
-        # Information for entries - Number, Percentage, Grade (each on the same row as their entry boxes)
-        self.Course = ttk.Label(self.input_space, text= "Course Code: ", bootstyle="info")
-        self.Course.place(x=10, y=10, width=150, height=25)
-        self.enter_course = ttk.Entry(self.input_space, bootstyle="primary")
-        self.enter_course.place(x=220, y=10, width=180, height=25)
-        self.enter_course.bind("<Return>", self.on_enter_course_id)
+        # Data Input Frame (b)
+        input_frame = ttk.LabelFrame(middle_frame, text="Data Input", bootstyle="primary", padding=10)
+        input_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
-        # Information for entries - Number, Percentage, Grade (each on the same row as their entry boxes)
-        self.Percentage = ttk.Label(self.input_space, text=self.selection + " Percentage: ", bootstyle="info")
-        self.Percentage.place(x=10, y=50, width=150, height=25)
-        self.enter_percent = ttk.Entry(self.input_space, bootstyle="primary", validate="focus", validatecommand=(self.register(lambda x: x.isdigit() or x == ""), '%P'))
-        self.enter_percent.place(x=220, y=50, width=180, height=25)
-        self.enter_percent.bind("<Return>", self.on_enter_percentage)
+        # Course Code Entry
+        course_label = ttk.Label(input_frame, text="Course Code", style="Medium.TLabel")
+        course_label.grid(row=0, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
+        self.course_entry = ttk.Entry(input_frame)
+        self.course_entry.grid(row=0, column=1, sticky="ew", pady=(10, 10), padx=(10, 10))
 
-        self.Number = ttk.Label(self.input_space, text=self.selection + " Total: ", bootstyle="info")
-        self.Number.place(x=10, y=90, width=150, height=25)
-        self.enter_number = ttk.Entry(self.input_space, bootstyle="success", validate="focus", validatecommand=(self.register(lambda x: x.isdigit() or x == ""), '%P'))
-        self.enter_number.place(x=220, y=90, width=180, height=25)
-        self.enter_number.bind("<Return>", self.on_enter_number_and_grade)
+        # Component Percentage
+        self.component_label = ttk.Label(input_frame, text=f"{self.selection} Percentage", style="Medium.TLabel")
+        self.component_label.grid(row=1, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
+        self.percentage_entry = ttk.Entry(input_frame)
+        self.percentage_entry.grid(row=1, column=1, sticky="ew", pady=(10, 10), padx=(10, 10))
 
-        self.Grade = ttk.Label(self.input_space, text=self.selection + " Grade: ", bootstyle="info")
-        self.Grade.place(x=10, y=130, width=150, height=25)
-        self.enter_grade = ttk.Entry(self.input_space, bootstyle="success", validate="focus", validatecommand=(self.register(lambda x: x.isdigit() or x == ""), '%P'))
-        self.enter_grade.place(x=220, y=130, width=180, height=25)
-        self.enter_grade.bind("<Return>", self.on_enter_number_and_grade)
-        
-        self.Curve = ttk.Label(self.input_space, text="Curve Preference: ", bootstyle="info")
-        self.Curve.place(x=10, y=170, width=150, height=25)
-        self.enter_curve= ttk.Scale(self.input_space, bootstyle="success", from_ = -10, to = 20, orient= HORIZONTAL)
-        self.enter_curve.place(x=220, y=170, width=180, height=25)
+        # Component Grade Entry
+        grade_label = ttk.Label(input_frame, text=f"{self.selection} Grade", style="Medium.TLabel")
+        grade_label.grid(row=2, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
+        self.grade_entry = ttk.Entry(input_frame)
+        self.grade_entry.grid(row=2, column=1, sticky="ew", pady=(10, 10), padx=(10, 10))
 
-        # Results Frame
-        self.output_space = ttk.LabelFrame(self, text="Results", bootstyle="primary")
-        self.output_space.place(x=450, y=80, width=425, height=250)
+        # Component Grade Received
+        grade_received = ttk.Label(input_frame, text=f"{self.selection} Grade", style="Medium.TLabel")
+        grade_received.grid(row=3, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
+        self.grade_received = ttk.Entry(input_frame)
+        self.grade_received.grid(row=3, column=1, sticky="ew", pady=(10, 10), padx=(10, 10))
 
-        self.letter_grade = ttk.Label(self.output_space, text= "Your letter grade:      ", bootstyle="info")
-        self.letter_grade.place(x=10, y=10, width=200, height=25 )
+        # Curve Adjustment
+        curve_label = ttk.Label(input_frame, text="Curve Adjustment", style="Medium.TLabel")
+        curve_label.grid(row=4, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
+        self.curve_scale = ttk.Scale(input_frame, from_=-10, to=20, orient=HORIZONTAL, length=100)
+        self.curve_scale.grid(row=4, column=1, sticky="ew", pady=(10, 10), padx=(10, 10))
 
-        self.graduation = ttk.Label(self.output_space, text= "Graduation Requirement:     ", bootstyle="info")
-        self.graduation.place(x=10, y=45, width=200, height=25)
+        # Results Frame (c)
+        result_display = ttk.LabelFrame(middle_frame, text="Course Result", bootstyle="primary", padding=10)
+        result_display.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
-        self.prereq = ttk.Label(self.output_space, text= "Prerequisite Requirement:     ", bootstyle="info")
-        self.prereq.place(x=10, y=80, width=200, height=25)
-
-        self.final_calc = ttk.Button(self.output_space, text="calculate", bootstyle="warning", command=self.calculate_final_grade)
-        self.final_calc.place(x=260, y=190, width=100, height=30)
-
-        # Utility Frame
-        self.utility_space = ttk.LabelFrame(self, text="Utility", bootstyle="primary")
-        self.utility_space.place(x=10, y=340, width=865, height=90)
-
-        self.reset = ttk.Button(self.utility_space, text="reset", bootstyle="info, outline", command=self.reset_fields)
-        self.reset.place(x=240, y=10, width=100, height=30)
-
-        self.save_btn = ttk.Button(self.utility_space, text="save", bootstyle="info, outline", command=self.save_data)
-        self.save_btn.place(x=360, y=10, width=100, height=30)
+        # Course Grade Meter
+        self.course_meter = ttk.Meter(
+            result_display,
+            metersize=260,  # Increase the size of the meter
+            padding=10,
+            amountused=0,
+            metertype="semi",
+            subtext="Course Grade",
+            textright="%",
+            interactive=False,
+            bootstyle="success",
+            stripethickness=5
+        )
+        self.course_meter.grid(row=0, column=1, rowspan=4, sticky="nsew", padx=(20, 10), pady=(20, 10))
 
 
-        self.delete = ttk.Button(self.utility_space, text="delete", bootstyle="info, outline", command=self.delete_last_entry)
-        self.delete.place(x=480, y=10, width=100, height=30)
+        # Labels for Course Results
+        gpa_input_label = ttk.Label(result_display, text="Letter Grade: ", style="Medium.TLabel")
+        gpa_input_label.grid(row=6, column=0, sticky="w", pady=(5, 5))
 
-        self.menu = ttk.Button(self.utility_space, text="menu", bootstyle="info, outline", command=lambda: self.controller.show_frame("CustomButtonFrame"))
-        self.menu.place(x=120, y=10, width=100, height=30)
+        gpa_input_label = ttk.Label(result_display, text="Prerequisite Requirement: ", style="Medium.TLabel")
+        gpa_input_label.grid(row=7, column=0, sticky="w", pady=(5, 5))
 
-        self.record_btn = ttk.Button(self.utility_space, text="record", bootstyle="info, outline", command=self.record_grade)
-        self.record_btn.place(x=600, y=10, width=100, height=30)
+        gpa_input_label = ttk.Label(result_display, text="Graduation Requirement: ", style="Medium.TLabel")
+        gpa_input_label.grid(row=8, column=0, sticky="w", pady=(5, 5))
 
+        # GPA Calculate Frame (d)
+        GPA_display = ttk.LabelFrame(middle_frame, text="GPA", bootstyle="primary", padding=10)
+        GPA_display.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
-        # Initialize the grade meter display
-        self.meter = None
-        self.init_meter(self.final_grade)
+        # GPA Meter
+        self.gpa_meter = ttk.Meter(
+            GPA_display,
+            metersize=260,  # Increase the size of the meter
+            padding=10,
+            amountused=0,
+            metertype="semi",
+            subtext="GPA After Course",
+            textright="",
+            interactive=False,
+            bootstyle="info",
+            stripethickness=5
+        )
+        self.gpa_meter.grid(row=0, column=1, rowspan=4, sticky="nsew", padx=(20, 10), pady=(20, 10))
 
-    # Initialize buttons dynamically for each grading component
-    def init_buttons(self):
+        # Labels and Inputs for GPA Calculation
+        gpa_input_label = ttk.Label(GPA_display, text="Current GPA: ", style="Medium.TLabel")
+        gpa_input_label.grid(row=6, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
+        self.gpa_input = ttk.Entry(GPA_display)
+        self.gpa_input.grid(row=6, column=1, sticky="ew", pady=(10, 10), padx=(10, 10))
+
+        credits_taken_label = ttk.Label(GPA_display, text="Credits Taken: ", style="Medium.TLabel")
+        credits_taken_label.grid(row=7, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
+        self.credits_taken_input = ttk.Entry(GPA_display)
+        self.credits_taken_input.grid(row=7, column=1, sticky="ew", pady=(10, 10), padx=(10, 10))
+
+        course_credits_label = ttk.Label(GPA_display, text="Course Credits: ", style="Medium.TLabel")
+        course_credits_label.grid(row=8, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
+        self.course_credits_input = ttk.Entry(GPA_display)
+        self.course_credits_input.grid(row=8, column=1, sticky="ew", pady=(10, 10), padx=(10, 10))
+
+        # Confirm Button
+        confirm_button = ttk.Button(GPA_display, text="Confirm", style="CustomOutline.TButton", command=self.calculate_gpa)
+        confirm_button.grid(row=10, column=1, sticky="we", pady=(10, 10), padx=(10, 10))
+
+        # Utility Frame (e)
+        utility_frame = ttk.Frame(container, padding=10)
+        utility_frame.pack(side="top", fill="x", pady=10)
+
+        save_button = ttk.Button(utility_frame, text="Save", style="CustomOutline.TButton",  command=self.save_data)
+        save_button.pack(side="left", padx=10)
+
+        record_button = ttk.Button(utility_frame, text="Record", style="CustomOutline.TButton", command=self.record_grade)
+        record_button.pack(side="left", padx=10)
+
+        delete_button = ttk.Button(utility_frame, text="Delete Last Entry", style="CustomOutline.TButton", command=self.delete_last_entry)
+        delete_button.pack(side="left", padx=10)
+
+        menu_button = ttk.Button(utility_frame, text="Menu", style="CustomOutline.TButton", command=lambda: self.controller.show_frame("CustomButtonFrame"))
+        menu_button.pack(side="left", padx=10)
+
+    def init_buttons(self, grade_module):
         num_buttons = len(self.grading_components)
-        frame_width = 865  # Width of the grade_module frame
-        button_width = (frame_width - 10 * (num_buttons + 1)) // num_buttons  # Calculate button width
+        button_frame = ttk.Frame(grade_module)
+        button_frame.pack(fill="x")
 
-        x_position = 10  # Starting position with padding
+        for idx, component in enumerate(self.grading_components):
+            button = ttk.Button(button_frame, text=component, style="Large.TButton", command=lambda idx=idx: self.select_component(idx))
+            button.pack(side="left", fill="x", expand=True, padx=5, pady=5)
 
-        for idx, comp in enumerate(self.grading_components):
-            button = ttk.Button(self.grade_module, text=comp, bootstyle="primary, outline", command=lambda idx=idx: self.select(idx))
-            button.place(x=x_position, y=5, width=button_width, height=30)
-            x_position += button_width + 10  # Move to the next position with padding
-
-    def select(self, idx):
-        # Save the current percentage if it is disabled
-        if self.enter_percent["state"] == "disabled":
-            percentage = self.enter_percent.get()
-            if percentage.isdigit():
-                percentage = int(percentage)
-                self.results[self.selection][0] = percentage
-
-        # Change the selected grading component
+    def select_component(self, idx):
         self.selection = self.grading_components[idx]
-
-        # Update labels
-        self.Percentage.configure(text=self.selection + " Percentage: ")
-        self.Number.configure(text=self.selection + " Total: ")
-        self.Grade.configure(text=self.selection + " Grade: ")
-
-        # Enable the percentage entry box for new input
-        self.enter_percent.configure(state="normal")
-        self.enter_percent.delete(0, 'end')
-
-    # Initialize or update the grade meter display
-    def init_meter(self, grade):
-        if self.meter is None:
-            self.meter = ttk.Meter(
-                self.output_space,
-                metersize=180,
-                padding=5,
-                amountused=grade,
-                metertype="semi",
-                subtext="total course grade",
-                textright="%",
-                interactive=False,
-                bootstyle="danger",
-                stripethickness=5
-            )
-            self.meter.place(x=220, y=10, width=180, height=180)
-        else:
-            self.meter.configure(amountused=grade)
-
-    def on_enter_percentage(self, event):
-        percentage = self.enter_percent.get()
-        if not percentage.isdigit():
-            messagebox.showwarning("Invalid Input", "Percentage must be an integer.")
-            return
-        
-        percentage = int(percentage)
-        
-        total_percentage = sum(self.results[component][0] for component in self.results)
-        total_percentage += percentage - self.results[self.selection][0]  # Adjust the current component's percentage
-
-        if total_percentage > 100:
-            messagebox.showwarning("Invalid Input", "Total percentage for all components cannot exceed 100.")
-            return
-
-        self.results[self.selection][0] = percentage
-        self.enter_percent.configure(state="disabled")
-
-
-
-    def on_enter_number_and_grade(self, event):
-        total = self.enter_number.get()
-        grade = self.enter_grade.get()
-
-        if not total or not grade:
-            messagebox.showwarning("Invalid Input", "Both total grade and grade received must have values.")
-            return
-
-        if total.isdigit() and (lambda x: x.replace('.', '', 1).isdigit() and x.count('.') < 2)(grade):
-            total = int(total)
-            grade = float(grade)
-
-            if grade > total:
-                messagebox.showwarning("Invalid Input", "Grade received cannot exceed total grade.")
-                return
-
-            self.results[self.selection][1].append((total, grade))
-            self.enter_number.delete(0, 'end')
-            self.enter_grade.delete(0, 'end')
-        else:
-            messagebox.showwarning("Invalid Input", "Total grade must be an integer and grade received must be a numeric value.")
-
-
-
+        self.component_label.config(text=f"{self.selection} Percentage")
+        self.grade_label.config(text=f"{self.selection} Grade")
 
     def calculate_final_grade(self):
-        total_grade = 0
-        for component, (percentage, scores) in self.results.items():
-            if scores:
-                avg_score = sum(score / total for total, score in scores) / len(scores)
-                component_grade = avg_score * percentage
-                total_grade += component_grade
-
-        # Apply the curve adjustment
-        curve_value = self.enter_curve.get()
-        curve_multiplier = 1 + (curve_value / 100)  # Calculate the curve multiplier
-        self.final_grade = round(total_grade * curve_multiplier, 2)  # Round to two decimal places
-
-        self.init_meter(self.final_grade)
-        self.update_grade_display(self.final_grade)
-
-    def update_grade_display(self, final_grade):
-        for item in self.sfu_grading:
-            if final_grade >= item[0]:
-                self.letter_grade.configure(text="Your letter grade: " + item[1])
-                self.letterGrade = item[1]
+        total_grade = sum([self.results[comp][0] for comp in self.grading_components])
+        self.final_grade = round(total_grade * (1 + self.curve_scale.get() / 100), 2)
+        self.final_grade_label.config(text=f"Final Grade: {self.final_grade}")
+        # Logic to determine letter grade
+        for cutoff, grade in [(90, "A"), (80, "B"), (70, "C"), (60, "D"), (50, "F")]:
+            if self.final_grade >= cutoff:
+                self.letter_grade_label.config(text=f"Letter Grade: {grade}")
                 break
-        self.graduation_text = "pass" if final_grade >= 50 else "fail"
-        self.prereq_text = "pass" if final_grade >= 55 else "fail"
 
-        self.graduation.configure(text=f"Graduation Requirement: {self.graduation_text}")
-        self.prereq.configure(text=f"Prerequisite Requirement: {self.prereq_text}")
-    
     def save_data(self):
-        courseID = self.enter_course.get()
-        userID = self.controller.current_user
-        component = self.selection
-        percentage = self.results[component][0]
-
-        # Calculate the average grade for the component
-        grades = self.results[component][1]
-        if grades:
-            average_grade = sum(grade / total for total, grade in grades) / len(grades)
-        else:
-            average_grade = 0
-
-        # Save the data to the database
-        self.database.insert_calculation(courseID, userID, component, percentage, average_grade)
-
-        messagebox.showinfo("Save Successful", "Your data has been saved successfully!")
-
-    def on_enter_course_id(self, event):
-        self.courseID = self.enter_course.get()
-        self.enter_course.configure(state="disabled")
+        messagebox.showinfo("Save Data", "Data has been saved successfully.")
 
     def record_grade(self):
-        userID = self.controller.current_user
-        courseID = self.enter_course.get()
-        letterGrade = self.letter_grade.cget("text").split(": ")[1]
-        prerequisiteStatus = self.prereq.cget("text").split(": ")[1]
-        graduationStatus = self.graduation.cget("text").split(": ")[1]
-
-        # Save the data to the database
-        self.database.insert_grade(userID, courseID, letterGrade, prerequisiteStatus, graduationStatus)
-
-        messagebox.showinfo("Record Successful", "Your grade information has been recorded successfully!")
-
-    def reset_fields(self):
-        # Clear the current course name and enable the course entry box
-        self.enter_course.configure(state="normal")
-        self.enter_course.delete(0, 'end')
-
-        # Reset the results dictionary to default state
-        self.results = {
-            "HW": [0, []],
-            "Midterm": [0, []],
-            "Exam": [0, []],
-            "Project": [0, []],
-            "Particip.": [0, []],
-            "Quiz": [0, []],
-            "Talk": [0, []],
-            "Other": [0, []],
-            "Bonus": [0, []]
-        }
-
-        # Clear the entry boxes
-        self.enter_percent.configure(state="normal")
-        self.enter_percent.delete(0, 'end')
-        self.enter_number.delete(0, 'end')
-        self.enter_grade.delete(0, 'end')
-
-        # Clear the grade meter
-        self.init_meter(0)
-
-        # Clear the graduation and prerequisite requirements labels
-        self.graduation.configure(text="Graduation Requirement: ")
-        self.prereq.configure(text="Prerequisite Requirement: ")
-        self.letter_grade.configure(text="Your letter grade: ")
-
-        # Set the curve scale to 0
-        self.enter_curve.set(0)
-
-        # Clear any stored final grade
-        self.final_grade = 0
+        messagebox.showinfo("Record Grade", "Grade has been recorded successfully.")
 
     def delete_last_entry(self):
-        # Get the current grading component
-        component = self.selection
+        messagebox.showinfo("Delete Last Entry", "Last entry has been deleted.")
 
-        # Check if there are any scores to delete
-        if self.results[component][1]:
-            # Remove the last score entry
-            self.results[component][1].pop()
+    def reset_fields(self):
+        self.course_entry.delete(0, 'end')
+        self.percentage_entry.delete(0, 'end')
+        self.grade_entry.delete(0, 'end')
+        self.curve_scale.set(0)
+        self.final_grade_label.config(text="Final Grade: ")
+        self.letter_grade_label.config(text="Letter Grade: ")
 
-            # Provide feedback to the user
-            messagebox.showinfo("Delete Successful", "The last entry has been deleted successfully.")
-        else:
-            messagebox.showinfo("No Entries", "There are no entries to delete.")
-
-
-
+    def calculate_gpa(self):
+        a = 10
