@@ -13,6 +13,22 @@ class GradeCalculatorFrame(Frame):
         self.init_ui()
 
     def init_ui(self):
+
+        self.course_data = {
+            "course_code": "",  # Store course code here
+            "components": {
+                "Assignment": {"percentage": 0, "grades": []},  # Component and grades list
+                "Midterm": {"percentage": 0, "grades": []},
+                "Final Exam": {"percentage": 0, "grades": []},
+                "Term Project": {"percentage": 0, "grades": []},
+                "Participation": {"percentage": 0, "grades": []},
+                "Quiz": {"percentage": 0, "grades": []},
+                "Presentation": {"percentage": 0, "grades": []},
+                "Other Marks": {"percentage": 0, "grades": []},
+                "Bonus Marks": {"percentage": 0, "grades": []}
+            }
+        }
+
         self.configure(bg="#1e1e2d")
 
         self.grading_components = ["Assignment", "Midterm", "Final Exam", "Term Project", "Participation", "Quiz", "Presentation", "Other Marks", "Bonus Marks"]
@@ -40,25 +56,31 @@ class GradeCalculatorFrame(Frame):
         course_label = ttk.Label(input_frame, text="Course Code", style="Medium.TLabel")
         course_label.grid(row=0, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
         self.course_entry = ttk.Entry(input_frame)
+        self.course_entry.bind("<Return>", lambda event: self.store_course_code())
         self.course_entry.grid(row=0, column=1, sticky="ew", pady=(10, 10), padx=(10, 10))
 
         # Component Percentage
         self.component_label = ttk.Label(input_frame, text=f"{self.selection} Percentage", style="Medium.TLabel")
         self.component_label.grid(row=1, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
         self.percentage_entry = ttk.Entry(input_frame)
+        self.percentage_entry.bind("<Return>", lambda event: self.store_component_percentage())
         self.percentage_entry.grid(row=1, column=1, sticky="ew", pady=(10, 10), padx=(10, 10))
 
-        # Component Grade Entry
-        grade_label = ttk.Label(input_frame, text=f"{self.selection} Grade", style="Medium.TLabel")
-        grade_label.grid(row=2, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
+       # Component Grade Entry
+        self.total_grade_label = ttk.Label(input_frame, text=f"{self.selection} Total", style="Medium.TLabel")
+        self.total_grade_label.grid(row=2, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
         self.grade_entry = ttk.Entry(input_frame)
         self.grade_entry.grid(row=2, column=1, sticky="ew", pady=(10, 10), padx=(10, 10))
+        self.grade_entry.bind("<Return>", lambda event: self.store_grades())
 
         # Component Grade Received
-        grade_received = ttk.Label(input_frame, text=f"{self.selection} Grade", style="Medium.TLabel")
-        grade_received.grid(row=3, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
+        self.grade_received_label = ttk.Label(input_frame, text=f"{self.selection} Grade", style="Medium.TLabel")
+        self.grade_received_label.grid(row=3, column=0, sticky="w", pady=(10, 10), padx=(10, 10))
         self.grade_received = ttk.Entry(input_frame)
         self.grade_received.grid(row=3, column=1, sticky="ew", pady=(10, 10), padx=(10, 10))
+        self.grade_received.bind("<Return>", lambda event: self.store_grades())
+
+
 
         # Curve Adjustment
         curve_label = ttk.Label(input_frame, text="Curve Adjustment", style="Medium.TLabel")
@@ -87,14 +109,19 @@ class GradeCalculatorFrame(Frame):
 
 
         # Labels for Course Results
-        gpa_input_label = ttk.Label(result_display, text="Letter Grade: ", style="Medium.TLabel")
-        gpa_input_label.grid(row=6, column=0, sticky="w", pady=(5, 5))
+        self.letter_grade_label = ttk.Label(result_display, text="Letter Grade: ", style="Medium.TLabel")
+        self.letter_grade_label.grid(row=6, column=0, sticky="w", pady=(5, 5))
 
-        gpa_input_label = ttk.Label(result_display, text="Prerequisite Requirement: ", style="Medium.TLabel")
-        gpa_input_label.grid(row=7, column=0, sticky="w", pady=(5, 5))
+        self.prereq_label = ttk.Label(result_display, text="Prerequisite Requirement: ", style="Medium.TLabel")
+        self.prereq_label.grid(row=7, column=0, sticky="w", pady=(5, 5))
 
-        gpa_input_label = ttk.Label(result_display, text="Graduation Requirement: ", style="Medium.TLabel")
-        gpa_input_label.grid(row=8, column=0, sticky="w", pady=(5, 5))
+        self.grad_label = ttk.Label(result_display, text="Graduation Requirement: ", style="Medium.TLabel")
+        self.grad_label.grid(row=8, column=0, sticky="w", pady=(5, 5))
+
+        # Inside the Results Frame (c)
+        confirm_grade_button = ttk.Button(result_display, text="Confirm Grade", style="CustomOutline.TButton", command=self.calculate_final_grade)
+        confirm_grade_button.grid(row=9, column=1, sticky="we", pady=(10, 10), padx=(10, 10))
+
 
         # GPA Calculate Frame (d)
         GPA_display = ttk.LabelFrame(middle_frame, text="GPA", bootstyle="primary", padding=10)
@@ -103,9 +130,10 @@ class GradeCalculatorFrame(Frame):
         # GPA Meter
         self.gpa_meter = ttk.Meter(
             GPA_display,
-            metersize=260,  # Increase the size of the meter
+            metersize=260,  # Size of the meter
             padding=10,
             amountused=0,
+            amounttotal=4.33,  # Set the total amount to 4.33 to represent the max GPA
             metertype="semi",
             subtext="GPA After Course",
             textright="",
@@ -163,17 +191,35 @@ class GradeCalculatorFrame(Frame):
     def select_component(self, idx):
         self.selection = self.grading_components[idx]
         self.component_label.config(text=f"{self.selection} Percentage")
-        self.grade_label.config(text=f"{self.selection} Grade")
+        self.total_grade_label.config(text=f"{self.selection} Total")
+        self.grade_received_label.config(text=f"{self.selection} Grade")
 
     def calculate_final_grade(self):
-        total_grade = sum([self.results[comp][0] for comp in self.grading_components])
-        self.final_grade = round(total_grade * (1 + self.curve_scale.get() / 100), 2)
-        self.final_grade_label.config(text=f"Final Grade: {self.final_grade}")
-        # Logic to determine letter grade
-        for cutoff, grade in [(90, "A"), (80, "B"), (70, "C"), (60, "D"), (50, "F")]:
-            if self.final_grade >= cutoff:
-                self.letter_grade_label.config(text=f"Letter Grade: {grade}")
-                break
+        try:
+            # Calculate total grade from all components
+            total_grade = sum([self.course_data["components"][comp]["grades"][-1][1] for comp in self.grading_components if self.course_data["components"][comp]["grades"]])
+
+            # Apply curve adjustment
+            self.final_grade = round(total_grade * (1 + self.curve_scale.get() / 100), 2)
+            
+            # Ensure the final grade does not exceed 100%
+            self.final_grade = min(self.final_grade, 100)
+            
+            # Determine letter grade based on final grade
+            for cutoff, grade in [(90, "A"), (80, "B"), (70, "C"), (60, "D"), (50, "F")]:
+                if self.final_grade >= cutoff:
+                    self.letter_grade_label.config(text=f"Letter Grade: {grade}")
+                    break
+
+            # Update course meter with the final grade percentage
+            self.course_meter.configure(amountused=self.final_grade)
+
+            return self.final_grade
+
+        except ValueError:
+            messagebox.showerror("Input Error", "Please ensure all grade inputs are numbers.")
+            return None
+
 
     def save_data(self):
         messagebox.showinfo("Save Data", "Data has been saved successfully.")
@@ -185,12 +231,110 @@ class GradeCalculatorFrame(Frame):
         messagebox.showinfo("Delete Last Entry", "Last entry has been deleted.")
 
     def reset_fields(self):
+        self.course_entry.config(state="normal")
+        self.percentage_entry.config(state="normal")
         self.course_entry.delete(0, 'end')
         self.percentage_entry.delete(0, 'end')
         self.grade_entry.delete(0, 'end')
+        self.grade_received.delete(0, 'end')
         self.curve_scale.set(0)
-        self.final_grade_label.config(text="Final Grade: ")
         self.letter_grade_label.config(text="Letter Grade: ")
 
+        # Reset the course_data structure
+        self.course_data = {
+            "course_code": "",
+            "components": {component: {"percentage": 0, "grades": []} for component in self.grading_components}
+    }
+
+
+
     def calculate_gpa(self):
-        a = 10
+        try:
+            # Get user inputs
+            current_gpa = float(self.gpa_input.get())
+            current_credits = float(self.credits_taken_input.get())
+            course_credits = float(self.course_credits_input.get())
+
+            # Calculate the final course grade percentage
+            final_percentage = self.calculate_final_grade()
+            if final_percentage is None:
+                return
+
+            # Convert percentage to GPA scale (e.g., 90-100% -> 4.0, 80-89% -> 3.0, etc.)
+            new_gpa = self.convert_percentage_to_gpa(final_percentage)
+
+            # Calculate the new weighted GPA
+            total_credits = current_credits + course_credits
+            weighted_gpa = (current_credits * current_gpa + course_credits * new_gpa) / total_credits
+
+            # Display the weighted GPA on the GPA meter, formatted to two decimal places
+            self.gpa_meter.configure(amountused=round(weighted_gpa, 2), subtext=f"GPA: {weighted_gpa:.2f}")
+
+
+
+        except ValueError:
+            messagebox.showerror("Input Error", "Please ensure all GPA and credit inputs are numbers.")
+
+    def convert_percentage_to_gpa(self, percentage):
+        """
+        Convert a percentage grade to a GPA. This is a simplified conversion.
+        Adjust the mapping according to your grading scale.
+        """
+        if percentage >= 90:
+            return 4.0
+        elif percentage >= 80:
+            return 3.0
+        elif percentage >= 70:
+            return 2.0
+        elif percentage >= 60:
+            return 1.0
+        else:
+            return 0.0
+    
+    def store_course_code(self):
+        course_code = self.course_entry.get().strip()
+        if not course_code:
+            messagebox.showerror("Input Error", "Course Code cannot be empty.")
+        else:
+            self.course_data["course_code"] = course_code
+            self.course_entry.config(state="disabled")  # Disable the entry field
+
+    
+    def store_component_percentage(self):
+        if not self.course_data["course_code"]:
+            messagebox.showerror("Input Error", "Please enter and store a valid Course Code first.")
+        else:
+            component_percentage = self.percentage_entry.get().strip()
+            try:
+                component_percentage = float(component_percentage)
+                if component_percentage <= 0 or component_percentage > 100:
+                    messagebox.showerror("Input Error", "Component Percentage must be between 0 and 100.")
+                else:
+                    self.course_data["components"][self.selection]["percentage"] = component_percentage
+                    self.percentage_entry.config(state="disabled")  # Disable the entry field
+            except ValueError:
+                messagebox.showerror("Input Error", "Component Percentage must be a valid number.")
+
+    
+    def store_grades(self):
+        if not self.course_data["course_code"]:
+            messagebox.showerror("Input Error", "Please enter and store a valid Course Code first.")
+        elif not self.course_data["components"][self.selection]["percentage"]:
+            messagebox.showerror("Input Error", "Please enter and store a valid Component Percentage first.")
+        else:
+            grade_total = self.grade_entry.get().strip()
+            grade_received = self.grade_received.get().strip()
+
+            try:
+                grade_total = float(grade_total)
+                grade_received = float(grade_received)
+                # Store the grades in the list for the selected component
+                self.course_data["components"][self.selection]["grades"].append((grade_total, grade_received))
+            except ValueError:
+                messagebox.showerror("Input Error", "Grades must be valid numbers.")
+        self.grade_entry.delete(0, 'end')
+        self.grade_received.delete(0, 'end')
+
+
+
+
