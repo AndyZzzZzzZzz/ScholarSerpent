@@ -1,5 +1,5 @@
 from pathlib import Path
-from tkinter import Frame, Label, Entry, Button, messagebox
+from tkinter import Frame, Label, messagebox, Toplevel
 import ttkbootstrap as ttk
 from PIL import Image, ImageTk
 from database import Database
@@ -7,6 +7,66 @@ import os
 import sys
 import hashlib
 
+
+class PasswordResetDialog(Toplevel):
+    def __init__(self, parent, userID):
+        super().__init__(parent)
+        self.userID = userID
+        self.title("Reset Password")
+
+        # Calculate window size as 40% of the screen size (smaller than the main window)
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        window_width = int(screen_width * 0.4)
+        window_height = int(screen_height * 0.4)
+        self.geometry(f'{window_width}x{window_height}')
+
+        # Center the window on the screen
+        position_right = int(self.winfo_screenwidth()/2 - window_width/2)
+        position_down = int(self.winfo_screenheight()/2 - window_height/2)
+        self.geometry(f"{window_width}x{window_height}+{position_right}+{position_down}")
+        
+        self.configure(bg='#2c3e50')  # Set background to match your theme
+
+        # New Password Label and Entry
+        Label(self, text="Enter your new password:", font=('Helvetica', 14), bg='#2c3e50', fg='#ecf0f1').pack(pady=10)
+        self.new_password_entry = ttk.Entry(self, show="*")
+        self.new_password_entry.pack(pady=10, padx=20, fill='x')
+
+        # Confirm Password Label and Entry
+        Label(self, text="Confirm your new password:", font=('Helvetica', 14), bg='#2c3e50', fg='#ecf0f1').pack(pady=10)
+        self.confirm_password_entry = ttk.Entry(self, show="*")
+        self.confirm_password_entry.pack(pady=10, padx=20, fill='x')
+
+        # Buttons Frame
+        buttons_frame = ttk.Frame(self)
+        buttons_frame.pack(pady=10, fill='x')
+
+        # Confirm Button
+        confirm_button = ttk.Button(buttons_frame, text="Confirm", command=self.confirm)
+        confirm_button.pack(side='left', padx=(20, 10))
+
+        # Cancel Button
+        cancel_button = ttk.Button(buttons_frame, text="Cancel", command=self.cancel)
+        cancel_button.pack(side='right', padx=(10, 20))
+
+        self.result = None
+
+    def confirm(self):
+        new_password = self.new_password_entry.get()
+        confirm_password = self.confirm_password_entry.get()
+
+        if new_password and new_password == confirm_password:
+            hashed_password = hashlib.sha256(new_password.encode()).hexdigest()
+            self.result = hashed_password
+            self.destroy()
+        else:
+            messagebox.showerror("Error", "Passwords do not match or reset was cancelled.")
+
+    def cancel(self):
+        self.result = None
+        self.destroy()
+    
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -142,8 +202,26 @@ class LoginFrame(Frame):
         else:
             messagebox.showerror("Login Failed", "User ID not found.")
 
-
-
-
     def forgot_password(self):
-        messagebox.showinfo("Forgot Password", "Password recovery functionality to be implemented.")
+        userID = self.email_entry.get().strip()
+
+        if userID == "Enter your User ID" or not userID:
+            messagebox.showerror("Input Error", "Please enter your User ID")
+            return
+
+        user = self.database.get_user(userID)
+        if user:
+            self.reset_password_dialog(userID)
+        else:
+            messagebox.showerror("Reset Failed", "User ID not found.")
+
+
+    
+    def reset_password_dialog(self, userID):
+        dialog = PasswordResetDialog(self.master, userID)
+        self.master.wait_window(dialog)
+        
+        if dialog.result:
+            self.database.update_user_password(userID, dialog.result)
+            messagebox.showinfo("Password Reset", "Your password has been successfully reset.")
+

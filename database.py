@@ -155,3 +155,17 @@ class Database:
         Close the connection to the SQLite database.
         """
         self.conn.close()
+
+    def update_user_password(self, userID, new_hashed_password):
+        """
+        Update the password for an existing user.
+        
+        :param userID: The identifier for the user.
+        :param new_hashed_password: The new hashed password for the user.
+        """
+        with self.conn:
+            self.conn.execute("""
+                UPDATE users
+                SET userPassword = ?
+                WHERE userID = ?
+            """, (new_hashed_password, userID))
