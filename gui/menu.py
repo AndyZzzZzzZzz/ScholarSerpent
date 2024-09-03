@@ -20,7 +20,7 @@ class CustomButtonFrame(Frame):
             ("Grade Calculator", lambda: self.controller.show_frame("GradeCalculatorFrame")),
             ("Calculate History", lambda: print("Calculate History clicked")),
             ("Performance Analysis", lambda: print("Performance Analysis clicked")),
-            ("Login", lambda: print("Login clicked")),
+            ("Login", lambda: self.controller.show_frame("LoginFrame")),
             ("Chat Bot", lambda: print("Chat Bot clicked")),
             ("Official Links", lambda: print("Official Links clicked"))
         ]
