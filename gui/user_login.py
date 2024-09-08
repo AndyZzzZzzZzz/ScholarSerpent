@@ -3,7 +3,7 @@ from pathlib import Path
 from tkinter import Frame, Label, messagebox, Toplevel  # Basic Tkinter components
 import ttkbootstrap as ttk  # Themed widgets from ttkbootstrap
 from PIL import Image, ImageTk  # Image handling from PIL
-from database import Database  # Custom database module
+from database.database import Database  # Custom database module
 import os
 import sys
 import hashlib  # For password hashing

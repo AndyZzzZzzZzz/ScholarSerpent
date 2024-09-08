@@ -4,7 +4,7 @@ from PIL import Image  # Handle image formats
 Image.CUBIC = Image.BICUBIC  # Define a cubic interpolation for resizing
 import ttkbootstrap as ttk  # ttkbootstrap for themed widgets
 from ttkbootstrap.constants import *  # Import constants for better readability
-from database import Database  # Import the custom Database class for data management
+from database.database import Database  # Import the custom Database class for data management
 
 class GradeCalculatorFrame(Frame):
     """
